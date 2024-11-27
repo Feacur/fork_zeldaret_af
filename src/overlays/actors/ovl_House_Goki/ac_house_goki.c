@@ -70,8 +70,51 @@ void func_80A83780_jp(House_Goki* this) {
     }
 }
 
-s16 func_80A837C4_jp(House_Goki* this);
-#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_House_Goki/ac_house_goki/func_80A837C4_jp.s")
+// #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_House_Goki/ac_house_goki/func_80A837C4_jp.s")
+s16 func_80A837C4_jp(House_Goki* this) {
+    s16 sp16;
+    s16 sp14;
+    s16 var_v1;
+    s16 var_v0_2;
+
+    var_v1 = 0x309;
+    this->unk_184 = 0;
+    sp14 = 0x309;
+    sp16 = 0x309;
+    if (this->actor.xzDistToPlayer > 20.0f) {
+        if (this->actor.colCheck.colResult.hitWall & 2) {
+            sp14 = -0x4000;
+            sp16 = 0x4000;
+        }
+        if ((this->actor.colCheck.colResult.hitWall & 4) || (this->actor.colCheck.colResult.hitWall & 8)) {
+            if (sp14 == 0x309) {
+                var_v1 = (0x8000 - this->actor.world.rot.y);
+                if (var_v1 > 0) {
+                    var_v1 = 0x10000 - this->actor.world.rot.y;
+                }
+                goto done;
+            }
+            var_v1 = -0x4000;
+            if (this->actor.colCheck.colResult.hitWall & 4) {
+                var_v1 = 0x4000;
+            }
+            goto done;
+        }
+        var_v0_2 = 0;
+        if (sp14 != 0x309) {
+            var_v1 = ABS((sp14 - this->actor.yawTowardsPlayer) << 0x10 >> 0x10);
+        }
+        if (sp16 != 0x309) {
+            if (var_v1 < (s16)ABS((sp16 - this->actor.yawTowardsPlayer) << 0x10 >> 0x10)) {
+                var_v0_2 = 1;
+            }
+        }
+        // var_v1 = (s32) (sp + (var_v0_2 * 2))->unk14; // m2c
+        var_v1 = ((s16*)&this->actor.home.pos.z)[var_v0_2]; // rewritten; an odd "random", i'd say
+    }
+done:
+    return var_v1;
+}
 
 // #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_House_Goki/ac_house_goki/func_80A83930_jp.s")
 void func_80A83930_jp(House_Goki* this, Game_Play* game_play UNUSED) {
