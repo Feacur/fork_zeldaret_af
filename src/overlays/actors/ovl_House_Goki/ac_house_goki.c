@@ -10,6 +10,7 @@
 #include "m_collision_bg.h"
 #include "m_rcp.h"
 #include "m_field_info.h"
+#include "macros.h"
 
 void aHG_actor_ct(Actor* thisx, Game_Play* game_play);
 void aHG_actor_dt(Actor* thisx, Game_Play* game_play);
@@ -70,8 +71,84 @@ void func_80A83780_jp(House_Goki* this) {
     }
 }
 
-s16 func_80A837C4_jp(House_Goki* this);
-#pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_House_Goki/ac_house_goki/func_80A837C4_jp.s")
+// #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_House_Goki/ac_house_goki/func_80A837C4_jp.s")
+s16 func_80A837C4_jp(House_Goki* this) {
+    // [1] something should restore missing
+    // 0:    addiu   sp,sp,-0x20
+
+    // volatile angle1 and angle2 can fix the first third of the function, including [2]
+    s16 angle1;
+    s16 angle2;
+
+    s16 result;
+    s16 choice;
+
+    result = 0x309;
+    this->unk_184 = 0;
+
+    if (this->actor.xzDistToPlayer > 20.0f) {
+        // that's why i'm cautios of all this pos.z pointer thing:
+        // even without it IDO generates `sp` usage
+        angle1 = 0x309;
+        angle2 = 0x309;
+        if (this->actor.colCheck.colResult.hitWall & 2) {
+            angle1 = -0x4000;
+            angle2 = 0x4000;
+            // dummy_label_0:; // matching
+        }
+
+        // [2] something should restore missing
+        // 5c:    lw      v0,0x98(a0)
+        // 60:    sll     v0,v0,0x6
+        // 64:    srl     v0,v0,0x1b
+
+        if (this->actor.colCheck.colResult.hitWall & 4 || this->actor.colCheck.colResult.hitWall & 8) {
+            if (angle1 == 0x309) {
+                result = (s16)(0x8000 - this->actor.world.rot.y);
+                // dummy_label_1:; // matching
+                if (result > 0) {
+                    result = 0x10000 - this->actor.world.rot.y;
+                    // dummy_label_2:; // matching
+                }
+            } else {
+                result = this->actor.colCheck.colResult.hitWall & 4 ? 0x4000 : -0x4000;
+                // dummy_label_3:; // matching
+            }
+        } else {
+            // dummy_label_4:; // matching
+            choice = 0;
+            // here comparison is with `0x309`, it's correct
+            if (angle1 != 0x309) {
+                // a ternary inside the macro works better than an `if`
+                angle1 = (s16)ABS((s16)(angle1 - this->actor.yawTowardsPlayer));
+            }
+            // [3] here should be comparison with smth from `0x16(sp)`
+            // m2c says it should be still `0x309`, or is it? *VSauce music*
+            // sp 16? a second part of a float? why?
+            if (angle2 != 0x309) {
+                // weird it wants s32 here
+                // otherwise a ternary expression looks great
+                angle2 = (s32)ABS((s16)(angle2 - this->actor.yawTowardsPlayer));
+                // ASM:
+                // angle2 << 16 >> 16 -- so, it's making an s16 even if it is already
+                // store 1 when "less than", branch
+                // do `choice << 1` even if it's still zero, why?
+                if (angle1 < angle2) {
+                    // (psuedo) store 1
+                    choice = 1;
+                }
+            }
+            // ASM:
+            // `((s16*)((s8*)this + choice * 2))[0x14]`
+            // or is it??? just a fake half-bake match? but it does `v1 = sp addu t6`!
+            result = ((s16*)&this->actor.home.pos.z)[choice]; // rewritten; an odd "random", i'd say
+
+            // but how to force it to use stack?
+        }
+        // if (choice) {} // [1] restores the missing stack allocation
+    }
+    return result;
+}
 
 // #pragma GLOBAL_ASM("asm/jp/nonmatchings/overlays/actors/ovl_House_Goki/ac_house_goki/func_80A83930_jp.s")
 void func_80A83930_jp(House_Goki* this, Game_Play* game_play UNUSED) {
